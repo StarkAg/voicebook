@@ -65,6 +65,16 @@ Rules:
 - Keep "answer" to one natural sentence, matching the user's language. Confirm what you did.
 - If unclear, set actions to [] and ask a brief clarifying question in "answer".`
 
+// Some models wrap JSON in markdown fences despite json mode; extract the object.
+function extractJson(raw: string): string {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  if (fenced) return fenced[1].trim()
+  const start = raw.indexOf('{')
+  const end = raw.lastIndexOf('}')
+  if (start !== -1 && end > start) return raw.slice(start, end + 1)
+  return raw
+}
+
 export async function runVoiceCommand(transcript: string, data: AppData, cursor: Date): Promise<AgentResult> {
   const context = buildContext(data, cursor)
   const raw = await chat({
@@ -75,16 +85,15 @@ export async function runVoiceCommand(transcript: string, data: AppData, cursor:
 
   let parsed: AgentResult
   try {
-    parsed = JSON.parse(raw)
+    parsed = JSON.parse(extractJson(raw))
   } catch {
     return { actions: [], answer: transcript ? 'Samajh nahi aaya, dobara boliye.' : '' }
   }
 
   const validStaff = new Set(data.staff)
   const actions = (parsed.actions || []).filter((a) => {
-    if (a.type === 'add_staff') return Boolean(a.name)
-    if ('staff' in a) return validStaff.has(a.staff) || a.type === 'remove_staff'
-    return true
+    if (a.type === 'add_staff' || a.type === 'remove_staff') return Boolean(a.name)
+    return validStaff.has(a.staff)
   })
 
   return { actions, answer: parsed.answer || '' }
