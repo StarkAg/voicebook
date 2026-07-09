@@ -78,7 +78,7 @@ export default function StatsView({ cursor, setCursor }: { cursor: Date; setCurs
             placeholder="New worker name"
             className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm outline-none placeholder:text-slate-500"
           />
-          <button onClick={addStaff} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+          <button onClick={addStaff} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-black hover:bg-brand-400">
             Add
           </button>
         </div>

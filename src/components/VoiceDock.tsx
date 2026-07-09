@@ -106,7 +106,7 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
   const configured = meshConfigured()
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#0b1020]/95 backdrop-blur">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-brand-500/15 bg-black/95 backdrop-blur">
       <div className="mx-auto max-w-md px-4 py-3">
         {(transcript || answer) && (
           <div className="mb-3 space-y-1.5 text-sm">
@@ -116,8 +116,8 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
               </div>
             )}
             {answer && (
-              <div className={phase === 'error' ? 'text-rose-400' : 'text-emerald-400'}>
-                <span className="text-slate-500">VoiceBook:</span> {answer}
+              <div className={phase === 'error' ? 'text-rose-400' : 'text-brand-400'}>
+                <span className="text-stone-500">VoiceBook:</span> {answer}
               </div>
             )}
           </div>
@@ -128,7 +128,7 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
             onClick={onMicClick}
             disabled={!configured || phase === 'thinking'}
             className={`grid h-12 w-12 shrink-0 place-items-center rounded-full transition disabled:opacity-40 ${
-              rec.recording ? 'animate-pulse bg-rose-500 text-white' : 'bg-brand-600 text-white hover:bg-brand-700'
+              rec.recording ? 'animate-pulse bg-rose-500 text-white' : 'bg-brand-500 text-black hover:bg-brand-400'
             }`}
             title={configured ? 'Hold a thought, tap to speak' : 'Add VITE_MESH_API_KEY to enable voice'}
           >

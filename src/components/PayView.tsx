@@ -61,8 +61,8 @@ export default function PayView({ cursor, setCursor }: { cursor: Date; setCursor
 
       {pay && (
         <>
-          <div className="rounded-2xl bg-gradient-to-br from-brand-600/30 to-violet-600/20 p-4">
-            <div className="text-xs text-slate-300">{sel}&rsquo;s take-home this month</div>
+          <div className="rounded-2xl border border-brand-500/20 bg-gradient-to-br from-brand-500/20 to-amber-700/10 p-4">
+            <div className="text-xs text-stone-300">{sel}&rsquo;s take-home this month</div>
             <div className="my-1 text-4xl font-bold tracking-tight">{inr(pay.net)}</div>
             <div className="text-xs text-slate-400">{pay.attended} / {ATTEND_THRESHOLD} days present</div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/30">
@@ -93,7 +93,7 @@ export default function PayView({ cursor, setCursor }: { cursor: Date; setCursor
               <input type="date" value={advDate} onChange={(e) => setAdvDate(e.target.value)} className="rounded-lg bg-white/10 px-2 py-2 text-sm outline-none" />
               <input type="number" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="Amount ₹" className="w-24 rounded-lg bg-white/10 px-3 py-2 text-sm outline-none placeholder:text-slate-500" />
               <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="note" className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm outline-none placeholder:text-slate-500" />
-              <button onClick={addAdv} className="rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700">Add</button>
+              <button onClick={addAdv} className="rounded-lg bg-brand-500 px-4 text-sm font-semibold text-black hover:bg-brand-400">Add</button>
             </div>
             {advList.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">

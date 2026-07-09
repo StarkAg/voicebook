@@ -19,25 +19,27 @@ export default function App() {
   const [cursor, setCursor] = useState(new Date())
 
   return (
-    <div className="mx-auto min-h-full max-w-md bg-[#0b1020] pb-40 text-slate-100">
+    <div className="mx-auto min-h-full max-w-md bg-black pb-40 text-stone-100">
       <header className="flex items-center gap-3 px-4 pt-5 pb-3">
-        <img src="/logo.png" alt="VoiceBook" className="h-10 w-10 rounded-xl" />
+        <img src="/logo.png" alt="VoiceBook" className="h-10 w-10 rounded-xl ring-1 ring-brand-500/30" />
         <div>
-          <div className="text-lg font-bold leading-tight">VoiceBook</div>
-          <div className="text-xs text-slate-400">Speak. Attendance & wages, done.</div>
+          <div className="text-lg font-bold leading-tight">
+            Voice<span className="text-brand-400">Book</span>
+          </div>
+          <div className="text-xs text-stone-400">Speak. Attendance & wages, done.</div>
         </div>
-        <span className="ml-auto rounded-full bg-white/5 px-2.5 py-1 text-[10px] text-slate-400">
+        <span className="ml-auto rounded-full border border-brand-500/20 bg-brand-500/10 px-2.5 py-1 text-[10px] text-brand-400">
           Powered by Mesh
         </span>
       </header>
 
-      <nav className="sticky top-0 z-10 flex gap-1 border-b border-white/10 bg-[#0b1020]/90 px-4 py-2 backdrop-blur">
+      <nav className="sticky top-0 z-10 flex gap-1 border-b border-white/10 bg-black/90 px-4 py-2 backdrop-blur">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-              tab === t.key ? 'bg-brand-600 text-white' : 'text-slate-400 hover:bg-white/5'
+              tab === t.key ? 'bg-brand-500 text-black' : 'text-stone-400 hover:bg-white/5'
             }`}
           >
             {t.label}

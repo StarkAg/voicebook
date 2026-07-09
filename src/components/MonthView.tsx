@@ -38,7 +38,7 @@ export default function MonthView({ cursor, setCursor }: { cursor: Date; setCurs
         <table className="w-full border-separate border-spacing-1 text-center text-xs">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-[#0b1020] text-left text-slate-400">Staff</th>
+              <th className="sticky left-0 z-10 bg-black text-left text-stone-400">Staff</th>
               {days.map((d) => (
                 <th key={d.getDate()} className={`min-w-7 font-normal ${isTue(d) ? 'text-amber-400' : d.getDay() === 0 ? 'text-rose-400' : 'text-slate-500'}`}>
                   <div>{d.getDate()}</div>
@@ -50,7 +50,7 @@ export default function MonthView({ cursor, setCursor }: { cursor: Date; setCurs
           <tbody>
             {data.staff.map((name) => (
               <tr key={name}>
-                <td className="sticky left-0 z-10 bg-[#0b1020] whitespace-nowrap pr-2 text-left font-medium">{name}</td>
+                <td className="sticky left-0 z-10 bg-black whitespace-nowrap pr-2 text-left font-medium">{name}</td>
                 {days.map((d) => {
                   const st = statusFor(data, d, name)
                   const future = dateKey(d) > todayKey
