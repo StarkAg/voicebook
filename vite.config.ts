@@ -15,11 +15,13 @@ export default defineConfig(({ mode }) => {
     // keeping it off the client.
     server: {
       proxy: {
-        '/mesh': {
+        // Mirror the production /api/mesh serverless function: strip the prefix
+        // and attach the key so the client never holds it. Same path in dev/prod.
+        '/api/mesh': {
           target,
           changeOrigin: true,
           secure: true,
-          rewrite: (path) => path.replace(/^\/mesh/, ''),
+          rewrite: (path) => path.replace(/^\/api\/mesh/, ''),
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
               if (key) proxyReq.setHeader('Authorization', `Bearer ${key}`)
