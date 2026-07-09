@@ -45,3 +45,39 @@ export interface AppData {
   cashEntries: CashEntry[]
   log: LogEntry[]
 }
+
+// --- Customer billing ---
+
+export interface BillItem {
+  name: string
+  qty: number
+  unitPrice: number
+  amount: number
+}
+
+export interface Bill {
+  id: string
+  customerName: string
+  customerPhone: string
+  items: BillItem[]
+  total: number
+  status: 'draft' | 'sent'
+  createdAt: number
+}
+
+export interface Customer {
+  name: string
+  phone: string
+}
+
+export interface PaymentRequest {
+  id: string
+  customerName: string
+  customerPhone: string
+  amount: number
+  vpa: string
+  upiLink: string
+  note: string
+  status: 'pending' | 'sent'
+  createdAt: number
+}
