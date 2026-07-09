@@ -73,7 +73,7 @@ Rules:
 - If unclear, set actions to [] and ask a brief clarifying question in "answer".`
 
 // Some models wrap JSON in markdown fences despite json mode; extract the object.
-function extractJson(raw: string): string {
+export function extractJson(raw: string): string {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)
   if (fenced) return fenced[1].trim()
   const start = raw.indexOf('{')

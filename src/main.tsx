@@ -1,10 +1,17 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { ConvexProvider, ConvexReactClient } from 'convex/react'
 import './index.css'
 import App from './App.tsx'
 
+// Convex backs the new billing UI (customers/bills/outbox) via hooks, and the
+// legacy store singleton (src/lib/store.ts) shares the same deployment.
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string)
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ConvexProvider client={convex}>
+      <App />
+    </ConvexProvider>
   </StrictMode>,
 )

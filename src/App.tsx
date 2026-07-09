@@ -2,14 +2,16 @@ import { useState } from 'react'
 import DailyView from './components/DailyView'
 import PayView from './components/PayView'
 import CashFlowView from './components/CashFlowView'
+import BillingView from './components/BillingView'
 import VoiceDock from './components/VoiceDock'
 
-type Tab = 'day' | 'pay' | 'cashflow'
+type Tab = 'day' | 'pay' | 'cashflow' | 'billing'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'day', label: 'Attendance' },
   { key: 'pay', label: 'Pay' },
   { key: 'cashflow', label: 'CashFlow' },
+  { key: 'billing', label: 'Billing' },
 ]
 
 const today = () => new Date()
@@ -29,7 +31,7 @@ export default function App() {
         </div>
       </header>
 
-      <nav className="mb-4 grid grid-cols-3 gap-3 bg-bg/95 py-2 backdrop-blur">
+      <nav className="mb-4 grid grid-cols-4 gap-2 bg-bg/95 py-2 backdrop-blur">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -50,6 +52,7 @@ export default function App() {
         {tab === 'day' && <DailyView cursor={cursor} setCursor={setCursor} />}
         {tab === 'pay' && <PayView cursor={cursor} setCursor={setCursor} />}
         {tab === 'cashflow' && <CashFlowView cursor={cursor} setCursor={setCursor} />}
+        {tab === 'billing' && <BillingView />}
       </main>
 
       <VoiceDock cursor={cursor} />
