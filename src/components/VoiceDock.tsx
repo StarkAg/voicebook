@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRecorder } from '../lib/useRecorder'
-import { transcribe, meshConfigured } from '../lib/mesh'
+import { transcribe, speak, meshConfigured } from '../lib/mesh'
 import { runVoiceCommand, type Action } from '../lib/agent'
 import { store } from '../lib/store'
 import { dateKey } from '../lib/date'
@@ -55,12 +55,21 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
     try {
       const result = await runVoiceCommand(text, store.get(), cursor)
       const count = applyActions(result.actions)
-      // Hidden mode: actions apply straight to the ledger — no on-screen
-      // question/answer text and no spoken reply. The grid/cash views updating
-      // are the confirmation. Everything is still recorded in the voice log.
+      // Screen stays hidden (no on-screen Q&A text), but the reply is spoken
+      // back via Mesh TTS: the model's answer for questions, a short Hindi
+      // confirmation for actions. The log keeps the full record.
       const reply = count ? `${count} update(s)` : result.answer
       store.logVoice(`🎙️ "${text}"${reply ? ` → ${reply}` : ''}`)
       setPhase('done')
+      const spoken = result.answer || (count ? 'Ho gaya.' : '')
+      if (spoken) {
+        try {
+          const url = await speak(spoken)
+          new Audio(url).play().catch(() => {})
+        } catch {
+          // TTS is best-effort — never block the action on a failed voice reply.
+        }
+      }
     } catch {
       setPhase('error')
     }
