@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRecorder } from '../lib/useRecorder'
-import { transcribe, meshConfigured, MeshError } from '../lib/mesh'
+import { transcribe, meshConfigured } from '../lib/mesh'
 import { runVoiceCommand, type Action } from '../lib/agent'
 import { store } from '../lib/store'
 import { dateKey } from '../lib/date'
@@ -44,8 +44,6 @@ function applyActions(actions: Action[]): number {
 export default function VoiceDock({ cursor }: { cursor: Date }) {
   const rec = useRecorder()
   const [phase, setPhase] = useState<Phase>('idle')
-  const [transcript, setTranscript] = useState('')
-  const [answer, setAnswer] = useState('')
   const [typed, setTyped] = useState('')
 
   const handleTranscript = async (text: string) => {
@@ -53,20 +51,17 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
       setPhase('idle')
       return
     }
-    setTranscript(text)
     setPhase('thinking')
     try {
       const result = await runVoiceCommand(text, store.get(), cursor)
       const count = applyActions(result.actions)
-      // Fast path: actions apply silently with a compact local confirmation —
-      // no spoken reply, no AI-written sentence (saves tokens). Only pure
-      // questions (no actions) get a text answer from the model.
-      const reply = count ? `✓ ${count} ${count === 1 ? 'update' : 'updates'}` : result.answer
-      setAnswer(reply)
+      // Hidden mode: actions apply straight to the ledger — no on-screen
+      // question/answer text and no spoken reply. The grid/cash views updating
+      // are the confirmation. Everything is still recorded in the voice log.
+      const reply = count ? `${count} update(s)` : result.answer
       store.logVoice(`🎙️ "${text}"${reply ? ` → ${reply}` : ''}`)
       setPhase('done')
-    } catch (e) {
-      setAnswer(e instanceof MeshError ? e.message : 'Kuch gadbad ho gayi. Dobara try karein.')
+    } catch {
       setPhase('error')
     }
   }
@@ -83,13 +78,10 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
       try {
         const text = await transcribe(blob)
         await handleTranscript(text)
-      } catch (e) {
-        setAnswer(e instanceof MeshError ? e.message : 'Awaaz samajh nahi aayi.')
+      } catch {
         setPhase('error')
       }
     } else {
-      setTranscript('')
-      setAnswer('')
       await rec.start()
       setPhase('recording')
     }
@@ -107,21 +99,6 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 backdrop-blur">
       <div className="mx-auto max-w-[760px] px-4 py-3">
-        {(transcript || answer) && (
-          <div className="mb-3 space-y-1.5 rounded-xl border border-line bg-card p-3 text-sm shadow-sm">
-            {transcript && (
-              <div className="text-fg">
-                <span className="font-bold text-muted">You:</span> {transcript}
-              </div>
-            )}
-            {answer && (
-              <div className={phase === 'error' ? 'text-absent' : 'text-brand'}>
-                <span className="font-bold text-muted">VoiceBook:</span> {answer}
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="flex items-center gap-2">
           <button
             onClick={onMicClick}
