@@ -3,9 +3,12 @@
 //
 // Pipeline: audio -> STT (Mesh) -> intent parsing (Mesh chat) -> action,
 // with answers optionally spoken back via TTS (Mesh).
-
-const BASE_URL = (import.meta.env.VITE_MESH_BASE_URL as string) || 'https://api.meshapi.ai/v1'
-const API_KEY = import.meta.env.VITE_MESH_API_KEY as string | undefined
+//
+// All requests go to the same-origin '/api/mesh' path. A proxy attaches the
+// Mesh key server-side so it never ships to the browser and CORS is avoided:
+//   - dev:  the Vite dev server proxy (see vite.config.ts)
+//   - prod: the /api/mesh serverless function (see api/mesh/[...path].js)
+const BASE_URL = '/api/mesh'
 
 // Auto routing lets Mesh pick the cheapest capable model per task.
 const CHAT_MODEL = (import.meta.env.VITE_MESH_CHAT_MODEL as string) || 'auto'
@@ -16,17 +19,6 @@ const TTS_VOICE = (import.meta.env.VITE_MESH_TTS_VOICE as string) || 'anushka'
 
 export class MeshError extends Error {}
 
-function requireKey(): string {
-  if (!API_KEY) {
-    throw new MeshError('Missing VITE_MESH_API_KEY. Add your Mesh key (rsk_...) to .env.local')
-  }
-  return API_KEY
-}
-
-function authHeaders(): HeadersInit {
-  return { Authorization: `Bearer ${requireKey()}` }
-}
-
 // Speech -> text via Mesh audio transcription endpoint.
 export async function transcribe(audio: Blob, language = 'hi'): Promise<string> {
   const form = new FormData()
@@ -36,7 +28,6 @@ export async function transcribe(audio: Blob, language = 'hi'): Promise<string> 
 
   const res = await fetch(`${BASE_URL}/audio/transcriptions`, {
     method: 'POST',
-    headers: authHeaders(),
     body: form,
   })
   if (!res.ok) throw new MeshError(`Mesh STT failed (${res.status}): ${await res.text()}`)
@@ -55,7 +46,7 @@ interface ChatOptions {
 export async function chat({ system, user, json, temperature = 0.2 }: ChatOptions): Promise<string> {
   const res = await fetch(`${BASE_URL}/chat/completions`, {
     method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: CHAT_MODEL,
       temperature,
@@ -75,7 +66,7 @@ export async function chat({ system, user, json, temperature = 0.2 }: ChatOption
 export async function speak(text: string, voice = TTS_VOICE): Promise<string> {
   const res = await fetch(`${BASE_URL}/audio/speech`, {
     method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: TTS_MODEL, voice, input: text }),
   })
   if (!res.ok) throw new MeshError(`Mesh TTS failed (${res.status}): ${await res.text()}`)
@@ -83,4 +74,8 @@ export async function speak(text: string, voice = TTS_VOICE): Promise<string> {
   return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }))
 }
 
-export const meshConfigured = () => Boolean(API_KEY)
+// Voice is enabled when a proxy is set to inject the key: VITE_MESH_API_KEY in
+// dev (also used by the Vite proxy), or VITE_MESH_ENABLED=1 for a deployed build
+// where the key lives only on the server as MESH_API_KEY.
+export const meshConfigured = () =>
+  Boolean(import.meta.env.VITE_MESH_API_KEY || import.meta.env.VITE_MESH_ENABLED)

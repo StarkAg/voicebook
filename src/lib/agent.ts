@@ -94,12 +94,12 @@ Rules:
 - Match staff names to the STAFF list even if pronunciation/spelling differs; use the exact spelling from STAFF.
 - Resolve relative dates ("aaj/today", "kal/yesterday") using TODAY. Default to TODAY when unspecified.
 - Cash book examples: "50 sale" means kind "in" with note "sale"; "150 tempo fare expense" means kind "out" with note "tempo fare". Use cash action for sales, cash received, expenses, rent, fare, transport, tea, purchase, and other shop cash movements.
-- If the owner only ASKS a question (earnings, who is absent, attendance), return "actions": [] and put the answer in "answer" using the SUMMARY data. Amounts in ₹.
-- Keep "answer" to one natural sentence, matching the user's language. Confirm what you did.
+- If the command produces one or more actions, set "answer" to "" (empty string). Do NOT confirm in words — the app shows a visual confirmation. This keeps replies fast and cheap.
+- ONLY fill "answer" when the owner ASKS a question (earnings, who is absent, attendance) AND there are no actions: return "actions": [] and answer in one short sentence using SUMMARY data, matching the user's language. Amounts in ₹.
 - If unclear, set actions to [] and ask a brief clarifying question in "answer".`
 
 // Some models wrap JSON in markdown fences despite json mode; extract the object.
-function extractJson(raw: string): string {
+export function extractJson(raw: string): string {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)
   if (fenced) return fenced[1].trim()
   const start = raw.indexOf('{')

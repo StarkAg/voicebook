@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRecorder } from '../lib/useRecorder'
-import { transcribe, speak, meshConfigured, MeshError } from '../lib/mesh'
+import { transcribe, speak, meshConfigured } from '../lib/mesh'
 import { runVoiceCommand, type Action } from '../lib/agent'
 import { store } from '../lib/store'
 import { dateKey } from '../lib/date'
@@ -44,8 +44,6 @@ function applyActions(actions: Action[]): number {
 export default function VoiceDock({ cursor }: { cursor: Date }) {
   const rec = useRecorder()
   const [phase, setPhase] = useState<Phase>('idle')
-  const [transcript, setTranscript] = useState('')
-  const [answer, setAnswer] = useState('')
   const [typed, setTyped] = useState('')
   const stopTimerRef = useRef<number | null>(null)
 
@@ -63,25 +61,26 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
       setPhase('idle')
       return
     }
-    setTranscript(text)
     setPhase('thinking')
     try {
       const result = await runVoiceCommand(text, store.get(), cursor)
       const count = applyActions(result.actions)
-      const reply = result.answer || (count ? 'Ho gaya.' : '')
-      setAnswer(reply)
+      // Screen stays hidden (no on-screen Q&A text), but the reply is spoken
+      // back via Mesh TTS: the model's answer for questions, a short Hindi
+      // confirmation for actions. The log keeps the full record.
+      const reply = count ? `${count} update(s)` : result.answer
       store.logVoice(`🎙️ "${text}"${reply ? ` → ${reply}` : ''}`)
       setPhase('done')
-      if (reply) {
+      const spoken = result.answer || (count ? 'Ho gaya.' : '')
+      if (spoken) {
         try {
-          const url = await speak(reply)
+          const url = await speak(spoken)
           new Audio(url).play().catch(() => {})
         } catch {
-          // TTS is best-effort
+          // TTS is best-effort — never block the action on a failed voice reply.
         }
       }
-    } catch (e) {
-      setAnswer(e instanceof MeshError ? e.message : 'Kuch gadbad ho gayi. Dobara try karein.')
+    } catch {
       setPhase('error')
     }
   }
@@ -97,8 +96,7 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
     try {
       const text = await transcribe(blob)
       await handleTranscript(text)
-    } catch (e) {
-      setAnswer(e instanceof MeshError ? e.message : 'Awaaz samajh nahi aayi.')
+    } catch {
       setPhase('error')
     }
   }
@@ -108,8 +106,6 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
     if (rec.recording) {
       await stopListening()
     } else {
-      setTranscript('')
-      setAnswer('')
       try {
         await rec.start()
         setPhase('recording')
@@ -135,21 +131,6 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 backdrop-blur">
       <div className="mx-auto max-w-[760px] px-4 py-3">
-        {(transcript || answer) && (
-          <div className="mb-3 space-y-1.5 rounded-xl border border-line bg-card p-3 text-sm shadow-sm">
-            {transcript && (
-              <div className="text-fg">
-                <span className="font-bold text-muted">You:</span> {transcript}
-              </div>
-            )}
-            {answer && (
-              <div className={phase === 'error' ? 'text-absent' : 'text-brand'}>
-                <span className="font-bold text-muted">VoiceBook:</span> {answer}
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="flex items-center gap-2">
           <button
             onClick={onMicClick}
