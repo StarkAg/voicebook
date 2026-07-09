@@ -4,10 +4,10 @@ import { MON, WD, dateKey, monthDays, isTue } from '../lib/date'
 import type { Status } from '../lib/types'
 
 const CELL: Record<Status, string> = {
-  P: 'bg-emerald-500 text-white',
-  N: 'bg-rose-500 text-white',
-  H: 'bg-amber-500 text-white',
-  C: 'bg-slate-600 text-slate-300',
+  P: 'bg-brand text-ink',
+  N: 'bg-absent text-white',
+  H: 'bg-half text-white',
+  C: 'bg-muted/15 text-muted',
 }
 
 const ORDER: (Status | '')[] = ['P', 'N', 'H', 'C', '']
@@ -34,13 +34,13 @@ export default function MonthView({ cursor, setCursor }: { cursor: Date; setCurs
         <button onClick={() => stepM(1)} className="nav-btn">›</button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="month-scroll">
         <table className="w-full border-separate border-spacing-1 text-center text-xs">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-black text-left text-stone-400">Staff</th>
+              <th className="sticky left-0 z-10 bg-card text-left text-muted">Staff</th>
               {days.map((d) => (
-                <th key={d.getDate()} className={`min-w-7 font-normal ${isTue(d) ? 'text-amber-400' : d.getDay() === 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                <th key={d.getDate()} className={`min-w-7 font-normal ${isTue(d) ? 'text-half' : d.getDay() === 0 ? 'text-absent' : 'text-muted'}`}>
                   <div>{d.getDate()}</div>
                   <div className="text-[9px]">{WD[d.getDay()][0]}</div>
                 </th>
@@ -50,7 +50,7 @@ export default function MonthView({ cursor, setCursor }: { cursor: Date; setCurs
           <tbody>
             {data.staff.map((name) => (
               <tr key={name}>
-                <td className="sticky left-0 z-10 bg-black whitespace-nowrap pr-2 text-left font-medium">{name}</td>
+                <td className="sticky left-0 z-10 whitespace-nowrap bg-card pr-2 text-left font-bold">{name}</td>
                 {days.map((d) => {
                   const st = statusFor(data, d, name)
                   const future = dateKey(d) > todayKey
@@ -59,9 +59,9 @@ export default function MonthView({ cursor, setCursor }: { cursor: Date; setCurs
                       <button
                         disabled={future}
                         onClick={() => cycle(d, name)}
-                        className={`h-7 w-7 rounded-md text-[11px] font-semibold disabled:opacity-20 ${st ? CELL[st] : 'bg-white/5 text-slate-500'}`}
+                        className={`h-8 w-8 rounded-md border border-line text-[11px] font-extrabold disabled:opacity-20 ${st ? CELL[st] : 'bg-card2 text-muted'}`}
                       >
-                        {future ? '' : st === 'H' ? '½' : st}
+                        {future ? '' : st === 'H' ? '1/2' : st}
                       </button>
                     </td>
                   )
@@ -72,11 +72,11 @@ export default function MonthView({ cursor, setCursor }: { cursor: Date; setCurs
         </table>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-400">
-        <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-400">P present</span>
-        <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-rose-400">N absent</span>
-        <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-400">½ half</span>
-        <span className="rounded-full bg-slate-500/15 px-2.5 py-1">C closed</span>
+      <div className="flex flex-wrap justify-center gap-2 text-xs text-muted">
+        <span className="rounded-full border border-line bg-card2 px-2.5 py-1 text-brand">P present</span>
+        <span className="rounded-full border border-line bg-card2 px-2.5 py-1 text-absent">N absent</span>
+        <span className="rounded-full border border-line bg-card2 px-2.5 py-1 text-half">1/2 half</span>
+        <span className="rounded-full border border-line bg-card2 px-2.5 py-1">C closed</span>
       </div>
     </div>
   )

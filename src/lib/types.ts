@@ -21,6 +21,15 @@ export interface Advance {
   note?: string
 }
 
+export interface CashEntry {
+  id: string
+  date: string // YYYY-MM-DD
+  kind: 'in' | 'out'
+  amount: number
+  note: string
+  source?: 'manual' | 'voice'
+}
+
 export interface LogEntry {
   at: number
   summary: string
@@ -33,5 +42,6 @@ export interface AppData {
   rates: Record<string, number> // staff -> daily rate
   days: Record<string, DayRecord> // date -> record
   advances: Advance[]
+  cashEntries: CashEntry[]
   log: LogEntry[]
 }

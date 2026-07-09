@@ -31,43 +31,50 @@ export default function StatsView({ cursor, setCursor }: { cursor: Date; setCurs
         <button onClick={() => stepM(1)} className="nav-btn">›</button>
       </div>
 
-      <div className="flex justify-center gap-2 text-xs">
-        <span className="rounded-full bg-white/10 px-3 py-1 text-slate-300">{workingDays} working days</span>
-        <span className="rounded-full bg-slate-500/15 px-3 py-1 text-slate-400">{closed} closed</span>
+      <div className="flex justify-center gap-1 text-xs">
+        <span className="rounded-full border border-line bg-card2 px-3 py-1 text-fg">{workingDays} working days</span>
+        <span className="rounded-full border border-line bg-card2 px-3 py-1 text-muted">{closed} closed</span>
       </div>
 
       <div className="space-y-3">
         {stats.map((s) => (
-          <div key={s.name} className="rounded-xl bg-white/5 p-3">
+          <div key={s.name} className="rounded-xl border border-line bg-card2 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="font-medium">{s.name}</span>
-              <span className={`text-sm font-semibold ${s.pct >= 90 ? 'text-emerald-400' : s.pct >= 75 ? 'text-amber-400' : 'text-rose-400'}`}>
+              <span className="font-bold">{s.name}</span>
+              <span className={`text-sm font-extrabold ${s.pct >= 90 ? 'text-brand' : s.pct >= 75 ? 'text-half' : 'text-absent'}`}>
                 {s.pct}%
               </span>
             </div>
-            <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
-              <span className="bg-emerald-500" style={{ flexGrow: s.p }} />
-              <span className="bg-amber-500" style={{ flexGrow: s.h }} />
-              <span className="bg-rose-500" style={{ flexGrow: s.n }} />
-              {s.counted === 0 && <span className="flex-1 bg-white/5" />}
+            <div className="flex h-2.5 overflow-hidden rounded-full bg-muted/15">
+              <span className="bg-brand" style={{ flexGrow: s.p }} />
+              <span className="bg-half" style={{ flexGrow: s.h }} />
+              <span className="bg-absent" style={{ flexGrow: s.n }} />
+              {s.counted === 0 && <span className="flex-1 bg-card" />}
             </div>
-            <div className="mt-1.5 flex gap-3 text-[11px] text-slate-400">
-              <span>{s.p} present</span>
-              {s.h > 0 && <span>{s.h} half</span>}
-              <span>{s.n} absent</span>
+            <div className="mt-1.5 flex gap-3 text-[11px] text-muted">
+              <span className="text-brand">{s.p} present</span>
+              {s.h > 0 && <span className="text-half">{s.h} half</span>}
+              <span className="text-absent">{s.n} absent</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl bg-white/5 p-3">
-        <div className="mb-2 text-sm font-medium text-slate-300">Manage staff</div>
-        <div className="mb-2 flex flex-wrap gap-2">
+      <div className="rounded-xl border border-line bg-card2 p-3">
+        <div className="mb-2 text-sm font-extrabold tracking-[0.12em] text-muted uppercase">Manage staff</div>
+        <div className="mb-3 space-y-2">
           {data.staff.map((name) => (
-            <span key={name} className="flex items-center gap-1.5 rounded-full bg-white/10 py-1 pl-3 pr-2 text-sm">
-              {name}
-              <button onClick={() => store.removeStaff(name)} className="text-slate-400 hover:text-rose-400">×</button>
-            </span>
+            <div key={name} className="flex items-center justify-between rounded-[10px] border border-line bg-card px-3 py-2 text-sm font-semibold">
+              <span>{name}</span>
+              <button
+                onClick={() => store.removeStaff(name)}
+                className="grid h-7 w-7 place-items-center rounded-full text-base leading-none text-muted transition hover:bg-absent/10 hover:text-absent"
+                aria-label={`Remove ${name}`}
+                title={`Remove ${name}`}
+              >
+                ×
+              </button>
+            </div>
           ))}
         </div>
         <div className="flex gap-2">
@@ -76,9 +83,9 @@ export default function StatsView({ cursor, setCursor }: { cursor: Date; setCurs
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addStaff()}
             placeholder="New worker name"
-            className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm outline-none placeholder:text-slate-500"
+            className="min-w-0 flex-1 rounded-[10px] border border-line bg-card px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-brand"
           />
-          <button onClick={addStaff} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-black hover:bg-brand-400">
+          <button onClick={addStaff} className="rounded-[10px] bg-brand px-4 py-2 text-sm font-extrabold text-ink active:brightness-95">
             Add
           </button>
         </div>

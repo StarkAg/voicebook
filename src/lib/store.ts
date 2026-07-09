@@ -1,21 +1,32 @@
 import { useSyncExternalStore } from 'react'
-import type { AppData, Advance, Status, LogEntry } from './types'
+import type { AppData, Advance, Status, LogEntry, CashEntry } from './types'
 import { dateKey } from './date'
 
 const KEY = 'voicebook:data'
+const DEFAULT_STAFF = ['Vijay', 'Anup', 'Sonu', 'Anand', 'Vicky', 'Dharmendra']
+const OLD_DEMO_STAFF = ['Ramesh', 'Suresh', 'Mahesh']
 
 const SEED: AppData = {
-  staff: ['Ramesh', 'Suresh', 'Mahesh'],
-  rates: { Ramesh: 600, Suresh: 550, Mahesh: 500 },
+  staff: DEFAULT_STAFF,
+  rates: {},
   days: {},
   advances: [],
+  cashEntries: [],
   log: [],
+}
+
+function sameStaff(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((name, i) => name === b[i])
 }
 
 function load(): AppData {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || 'null')
-    if (raw && Array.isArray(raw.staff)) return { ...SEED, ...raw }
+    if (raw && Array.isArray(raw.staff)) {
+      const data = { ...SEED, ...raw }
+      if (sameStaff(data.staff, OLD_DEMO_STAFF)) return { ...data, staff: DEFAULT_STAFF, rates: {} }
+      return data
+    }
   } catch {
     // ignore
   }
@@ -109,6 +120,27 @@ export const store = {
 
   removeAdvance(id: string) {
     set({ ...state, advances: state.advances.filter((a) => a.id !== id) })
+  },
+
+  addCashEntry(kind: CashEntry['kind'], amount: number, note: string, date?: string, source: 'manual' | 'voice' = 'manual') {
+    const entry: CashEntry = {
+      id: `cash-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      date: date || dateKey(new Date()),
+      kind,
+      amount,
+      note: note.trim() || (kind === 'in' ? 'Cash inward' : 'Expense'),
+      source,
+    }
+    log({
+      summary: `${kind === 'in' ? 'Cash in' : 'Expense'} ₹${amount}: ${entry.note}`,
+      date: entry.date,
+      source,
+    })
+    set({ ...state, cashEntries: [...(state.cashEntries || []), entry] })
+  },
+
+  removeCashEntry(id: string) {
+    set({ ...state, cashEntries: (state.cashEntries || []).filter((a) => a.id !== id) })
   },
 
   logVoice(summary: string) {

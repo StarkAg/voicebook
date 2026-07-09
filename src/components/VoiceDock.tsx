@@ -32,6 +32,10 @@ function applyActions(actions: Action[]): number {
         store.removeStaff(a.name)
         n++
         break
+      case 'cash':
+        store.addCashEntry(a.kind, a.amount, a.note || '', a.date, 'voice')
+        n++
+        break
     }
   }
   return n
@@ -106,18 +110,18 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
   const configured = meshConfigured()
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-brand-500/15 bg-black/95 backdrop-blur">
-      <div className="mx-auto max-w-md px-4 py-3">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 backdrop-blur">
+      <div className="mx-auto max-w-[760px] px-4 py-3">
         {(transcript || answer) && (
-          <div className="mb-3 space-y-1.5 text-sm">
+          <div className="mb-3 space-y-1.5 rounded-xl border border-line bg-card p-3 text-sm shadow-sm">
             {transcript && (
-              <div className="text-slate-400">
-                <span className="text-slate-500">You:</span> {transcript}
+              <div className="text-fg">
+                <span className="font-bold text-muted">You:</span> {transcript}
               </div>
             )}
             {answer && (
-              <div className={phase === 'error' ? 'text-rose-400' : 'text-brand-400'}>
-                <span className="text-stone-500">VoiceBook:</span> {answer}
+              <div className={phase === 'error' ? 'text-absent' : 'text-brand'}>
+                <span className="font-bold text-muted">VoiceBook:</span> {answer}
               </div>
             )}
           </div>
@@ -128,12 +132,12 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
             onClick={onMicClick}
             disabled={!configured || phase === 'thinking'}
             className={`grid h-12 w-12 shrink-0 place-items-center rounded-full transition disabled:opacity-40 ${
-              rec.recording ? 'animate-pulse bg-rose-500 text-white' : 'bg-brand-500 text-black hover:bg-brand-400'
+              rec.recording ? 'animate-pulse bg-absent text-white' : 'bg-brand text-ink active:brightness-95'
             }`}
             title={configured ? 'Hold a thought, tap to speak' : 'Add VITE_MESH_API_KEY to enable voice'}
           >
             {phase === 'thinking' ? (
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-ink/30 border-t-ink" />
             ) : (
               <MicIcon />
             )}
@@ -145,16 +149,16 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
             onKeyDown={(e) => e.key === 'Enter' && submitTyped()}
             placeholder={rec.recording ? 'Listening…' : 'or type: "Ramesh present, Suresh ko 500 advance"'}
             disabled={rec.recording}
-            className="flex-1 rounded-full bg-white/10 px-4 py-3 text-sm outline-none placeholder:text-slate-500"
+            className="min-w-0 flex-1 rounded-full border border-line bg-card2 px-4 py-3 text-sm outline-none placeholder:text-muted focus:border-brand"
           />
         </div>
 
         {!configured && (
-          <div className="mt-2 text-center text-xs text-amber-400">
+          <div className="mt-2 rounded-[10px] border border-half/30 bg-half/10 px-3 py-2 text-center text-xs text-half">
             Voice needs a Mesh key — copy .env.example to .env.local and add VITE_MESH_API_KEY.
           </div>
         )}
-        {rec.error && <div className="mt-2 text-center text-xs text-rose-400">{rec.error}</div>}
+        {rec.error && <div className="mt-2 text-center text-xs text-absent">{rec.error}</div>}
       </div>
     </div>
   )

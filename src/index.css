@@ -2,30 +2,182 @@
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: #fef9e7;
-  --color-brand-100: #fdf0c4;
-  --color-brand-400: #f5c518;
-  --color-brand-500: #eab308;
-  --color-brand-600: #d19b06;
-  --color-brand-700: #a97e05;
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card2: var(--card2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-brand: var(--brass);
+  --color-ink: var(--brass-ink);
+  --color-absent: var(--red);
+  --color-half: var(--amber);
 }
 
+/* Shiv Hardware attendance palette — warm parchment (light) + brass accent */
+:root {
+  --bg: #e8e5df;
+  --card: #f3f0ea;
+  --card2: #ede9e1;
+  --fg: #1c1917;
+  --muted: #78716c;
+  --line: rgba(28, 25, 23, 0.12);
+  --brass: #b9924b;
+  --brass-ink: #201804;
+  --red: #9f1d20;
+  --amber: #b47016;
+}
+:root.dark {
+  --bg: #12110f;
+  --card: #1a1815;
+  --card2: #211e1a;
+  --fg: #eae7e1;
+  --muted: #a8a29e;
+  --line: rgba(255, 255, 255, 0.1);
+  --brass: #c9a45c;
+  --brass-ink: #1a1204;
+  --red: #d3595c;
+  --amber: #d9a441;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
 html,
 body,
 #root {
   height: 100%;
 }
-
+html,
+body {
+  overflow: auto;
+}
 body {
   margin: 0;
-  background: #000000;
-  color: #f5f5f4;
+  background: var(--bg);
+  color: var(--fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+:root.dark body {
+  background: linear-gradient(180deg, #12110f 0%, #1a1815 54%, #100f0e 100%);
+  background-attachment: fixed;
 }
 
 @layer components {
   .nav-btn {
-    @apply grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-lg text-slate-300 transition hover:bg-white/15;
+    @apply grid h-11 w-11 place-items-center rounded-xl border border-line bg-card2 text-2xl leading-none text-fg transition active:brightness-95;
+  }
+
+  .daily-month-card {
+    container-type: inline-size;
+    container-name: daily-month;
+    --daily-month-cell: 32px;
+    --daily-month-staff-width: 6.5rem;
+    @apply space-y-3 rounded-[16px] border border-line bg-card2 p-3;
+  }
+
+  .daily-section-divider {
+    height: 1px;
+    background: var(--line);
+  }
+
+  .month-scroll {
+    @apply overflow-x-auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .month-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .daily-month-header {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .daily-month-nav {
+    @apply grid h-10 w-10 place-items-center rounded-xl border border-line bg-card text-2xl leading-none text-fg transition active:brightness-95;
+  }
+
+  .daily-month-title {
+    @apply min-w-0 flex-1 text-center text-sm font-semibold text-fg;
+  }
+
+  .daily-month-scroll {
+    @apply overflow-x-auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .daily-month-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .daily-month-table {
+    @apply w-max min-w-full border-separate border-spacing-1 text-center text-xs;
+  }
+
+  .daily-month-staff-head,
+  .daily-month-staff-name {
+    width: var(--daily-month-staff-width);
+    min-width: var(--daily-month-staff-width);
+  }
+
+  .daily-month-staff-head {
+    @apply sticky left-0 z-10 bg-card2 text-left font-bold text-muted;
+  }
+
+  .daily-month-staff-name {
+    @apply sticky left-0 z-10 bg-card2 pr-2 text-left font-bold;
+  }
+
+  .daily-month-day-head {
+    width: var(--daily-month-cell);
+    min-width: var(--daily-month-cell);
+    @apply font-normal;
+  }
+
+  .daily-month-day-num {
+    @apply text-[11px] font-semibold leading-none;
+  }
+
+  .daily-month-day-wd {
+    @apply text-[9px] uppercase tracking-[0.2em] text-muted;
+  }
+
+  .daily-month-cell {
+    width: var(--daily-month-cell);
+    height: var(--daily-month-cell);
+    @apply rounded-lg border border-line text-[10px] font-extrabold transition disabled:opacity-20;
+  }
+
+  .daily-month-legend {
+    @apply flex flex-wrap justify-center gap-2 text-xs text-muted;
+  }
+
+  .daily-month-pill {
+    @apply rounded-full border border-line bg-card px-2.5 py-1;
+  }
+}
+
+@container daily-month (min-width: 42rem) {
+  .daily-month-card {
+    --daily-month-cell: 36px;
+    --daily-month-staff-width: 7.25rem;
+  }
+}
+
+@container daily-month (min-width: 52rem) {
+  .daily-month-card {
+    --daily-month-cell: 40px;
+    --daily-month-staff-width: 7.75rem;
   }
 }

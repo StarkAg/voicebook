@@ -1,45 +1,44 @@
 import { useState } from 'react'
 import DailyView from './components/DailyView'
-import MonthView from './components/MonthView'
-import StatsView from './components/StatsView'
 import PayView from './components/PayView'
+import CashFlowView from './components/CashFlowView'
 import VoiceDock from './components/VoiceDock'
 
-type Tab = 'day' | 'month' | 'stats' | 'pay'
+type Tab = 'day' | 'pay' | 'cashflow'
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'day', label: 'Daily' },
-  { key: 'month', label: 'Month' },
-  { key: 'stats', label: 'Stats' },
+  { key: 'day', label: 'Attendance' },
   { key: 'pay', label: 'Pay' },
+  { key: 'cashflow', label: 'CashFlow' },
 ]
+
+const today = () => new Date()
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('day')
-  const [cursor, setCursor] = useState(new Date())
+  const [cursor, setCursor] = useState(today)
 
   return (
-    <div className="mx-auto min-h-full max-w-md bg-black pb-40 text-stone-100">
-      <header className="flex items-center gap-3 px-4 pt-5 pb-3">
-        <img src="/logo.png" alt="VoiceBook" className="h-10 w-10 rounded-xl ring-1 ring-brand-500/30" />
-        <div>
-          <div className="text-lg font-bold leading-tight">
-            Voice<span className="text-brand-400">Book</span>
-          </div>
-          <div className="text-xs text-stone-400">Speak. Attendance & wages, done.</div>
+    <div className="mx-auto min-h-full max-w-[760px] bg-bg px-3 pt-16 pb-40 text-fg">
+      <header className="fixed inset-x-0 top-0 z-20 mx-auto max-w-[760px] border-b border-line bg-bg/95 px-3 py-3 backdrop-blur">
+        <div className="text-lg font-bold leading-tight">
+          Voice<span className="text-brand">Book</span>
         </div>
-        <span className="ml-auto rounded-full border border-brand-500/20 bg-brand-500/10 px-2.5 py-1 text-[10px] text-brand-400">
-          Powered by Mesh
-        </span>
+        <div className="text-[10px] font-semibold text-muted">
+          Powered by Mesh API
+        </div>
       </header>
 
-      <nav className="sticky top-0 z-10 flex gap-1 border-b border-white/10 bg-black/90 px-4 py-2 backdrop-blur">
+      <nav className="mb-4 grid grid-cols-3 gap-3 bg-bg/95 py-2 backdrop-blur">
         {TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-              tab === t.key ? 'bg-brand-500 text-black' : 'text-stone-400 hover:bg-white/5'
+            onClick={() => {
+              setTab(t.key)
+              if (t.key === 'day') setCursor(today())
+            }}
+            className={`min-w-0 rounded-xl border px-1 py-2.5 text-xs font-bold transition sm:text-sm ${
+              tab === t.key ? 'border-brand bg-brand text-ink' : 'border-line bg-card text-muted hover:bg-card2'
             }`}
           >
             {t.label}
@@ -47,11 +46,10 @@ export default function App() {
         ))}
       </nav>
 
-      <main className="px-4 py-4">
+      <main className="rounded-[18px] border border-line bg-card p-3 shadow-sm">
         {tab === 'day' && <DailyView cursor={cursor} setCursor={setCursor} />}
-        {tab === 'month' && <MonthView cursor={cursor} setCursor={setCursor} />}
-        {tab === 'stats' && <StatsView cursor={cursor} setCursor={setCursor} />}
         {tab === 'pay' && <PayView cursor={cursor} setCursor={setCursor} />}
+        {tab === 'cashflow' && <CashFlowView cursor={cursor} setCursor={setCursor} />}
       </main>
 
       <VoiceDock cursor={cursor} />
