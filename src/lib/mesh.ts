@@ -4,7 +4,11 @@
 // Pipeline: audio -> STT (Mesh) -> intent parsing (Mesh chat) -> action,
 // with answers optionally spoken back via TTS (Mesh).
 
-const BASE_URL = (import.meta.env.VITE_MESH_BASE_URL as string) || 'https://api.meshapi.ai/v1'
+// Requests go to the same-origin '/mesh' path, which the Vite dev server proxies
+// to the real Mesh API (see vite.config.ts). This avoids browser CORS blocks and
+// lets the key be attached server-side. VITE_MESH_BASE_URL configures the proxy
+// target, not the client fetch path.
+const BASE_URL = '/mesh'
 const API_KEY = import.meta.env.VITE_MESH_API_KEY as string | undefined
 
 // Auto routing lets Mesh pick the cheapest capable model per task.
