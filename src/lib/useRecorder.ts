@@ -29,7 +29,10 @@ export function useRecorder(): Recorder {
       mediaRef.current = rec
       setRecording(true)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Microphone access denied')
+      const message = e instanceof Error ? e.message : 'Microphone access denied'
+      setError(message)
+      setRecording(false)
+      throw new Error(message)
     }
   }, [])
 

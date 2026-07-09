@@ -16,6 +16,32 @@ export interface AgentResult {
   answer: string
 }
 
+function parseSimpleCashCommand(transcript: string, cursor: Date): AgentResult | null {
+  const text = transcript.trim().toLowerCase()
+  const match = text.match(/^(?:₹|rs\.?\s*)?(\d+(?:\.\d+)?)\s+(sale|sales|expense|expenses|out|in|income|received|receipt)\b(?:\s+(.*))?$/i)
+  if (!match) return null
+
+  const amount = Number(match[1])
+  if (!Number.isFinite(amount) || amount <= 0) return null
+
+  const kindWord = match[2]
+  const note = (match[3] || kindWord).trim()
+  const kind: 'in' | 'out' = /expense|expenses|out/i.test(kindWord) ? 'out' : 'in'
+
+  return {
+    actions: [
+      {
+        type: 'cash',
+        kind,
+        amount,
+        note: note || (kind === 'in' ? 'sale' : 'expense'),
+        date: dateKey(cursor),
+      },
+    ],
+    answer: kind === 'in' ? `₹${amount} sale add kar diya.` : `₹${amount} expense add kar diya.`,
+  }
+}
+
 // Compact snapshot so the model can answer questions and resolve names/dates.
 function buildContext(data: AppData, cursor: Date): string {
   const today = dateKey(new Date())
@@ -83,17 +109,29 @@ function extractJson(raw: string): string {
 }
 
 export async function runVoiceCommand(transcript: string, data: AppData, cursor: Date): Promise<AgentResult> {
+  const simple = parseSimpleCashCommand(transcript, cursor)
+  if (simple) return simple
+
   const context = buildContext(data, cursor)
-  const raw = await chat({
-    system: SYSTEM,
-    user: `CONTEXT:\n${context}\n\nOWNER SAID:\n"${transcript}"`,
-    json: true,
-  })
+  let raw = ''
+  try {
+    raw = await chat({
+      system: SYSTEM,
+      user: `CONTEXT:\n${context}\n\nOWNER SAID:\n"${transcript}"`,
+      json: true,
+    })
+  } catch {
+    const fallback = parseSimpleCashCommand(transcript, cursor)
+    if (fallback) return fallback
+    throw new Error('Mesh chat unavailable.')
+  }
 
   let parsed: AgentResult
   try {
     parsed = JSON.parse(extractJson(raw))
   } catch {
+    const fallback = parseSimpleCashCommand(transcript, cursor)
+    if (fallback) return fallback
     return { actions: [], answer: transcript ? 'Samajh nahi aaya, dobara boliye.' : '' }
   }
 
