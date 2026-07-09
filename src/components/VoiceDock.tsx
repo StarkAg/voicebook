@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRecorder } from '../lib/useRecorder'
-import { transcribe, speak, meshConfigured, MeshError } from '../lib/mesh'
+import { transcribe, meshConfigured, MeshError } from '../lib/mesh'
 import { runVoiceCommand, type Action } from '../lib/agent'
 import { store } from '../lib/store'
 import { dateKey } from '../lib/date'
@@ -58,18 +58,13 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
     try {
       const result = await runVoiceCommand(text, store.get(), cursor)
       const count = applyActions(result.actions)
-      const reply = result.answer || (count ? 'Ho gaya.' : '')
+      // Fast path: actions apply silently with a compact local confirmation —
+      // no spoken reply, no AI-written sentence (saves tokens). Only pure
+      // questions (no actions) get a text answer from the model.
+      const reply = count ? `✓ ${count} ${count === 1 ? 'update' : 'updates'}` : result.answer
       setAnswer(reply)
       store.logVoice(`🎙️ "${text}"${reply ? ` → ${reply}` : ''}`)
       setPhase('done')
-      if (reply) {
-        try {
-          const url = await speak(reply)
-          new Audio(url).play().catch(() => {})
-        } catch {
-          // TTS is best-effort
-        }
-      }
     } catch (e) {
       setAnswer(e instanceof MeshError ? e.message : 'Kuch gadbad ho gayi. Dobara try karein.')
       setPhase('error')
