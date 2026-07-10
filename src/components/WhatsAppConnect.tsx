@@ -13,27 +13,26 @@ export default function WhatsAppConnect() {
 
   const state = status?.status ?? 'disconnected'
   const connected = state === 'connected'
+  const qr = !connected ? status?.qr : undefined
 
   useEffect(() => {
-    if (state === 'qr' && status?.qr) {
-      QRCode.toDataURL(status.qr, { margin: 1, width: 320 })
+    if (qr) {
+      QRCode.toDataURL(qr, { margin: 1, width: 320 })
         .then(setQrImg)
         .catch(() => setQrImg(''))
     } else {
       setQrImg('')
     }
-  }, [state, status?.qr])
+  }, [qr])
 
-  const dot =
-    connected ? 'bg-brand' : state === 'qr' || state === 'connecting' ? 'bg-half' : 'bg-absent'
-  const label =
-    connected
-      ? 'Connected'
-      : state === 'qr'
-        ? 'Scan to link'
-        : state === 'connecting'
-          ? 'Connecting…'
-          : 'Not connected'
+  const dot = connected ? 'bg-brand' : qr ? 'bg-half' : 'bg-absent'
+  const label = connected
+    ? 'Connected'
+    : qr
+      ? 'Scan to link'
+      : state === 'connecting'
+        ? 'Connecting…'
+        : 'Not connected'
 
   return (
     <div className="rounded-2xl border border-line bg-card p-3">

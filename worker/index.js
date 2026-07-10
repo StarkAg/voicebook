@@ -92,7 +92,9 @@ async function start() {
       const code = lastDisconnect?.error?.output?.statusCode
       const loggedOut = code === DisconnectReason.loggedOut
       console.log(`Connection closed (${code}) — ${loggedOut ? 'logged out' : 'reconnecting'}`)
-      publish('disconnected')
+      // Only mark disconnected on a real logout; transient reconnects stay
+      // "connecting" so the last QR remains visible in the app.
+      publish(loggedOut ? 'disconnected' : 'connecting')
       if (!loggedOut) start()
     }
   })

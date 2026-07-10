@@ -63,7 +63,11 @@ export const setStatus = mutation({
   },
   handler: async (ctx, { status, qr }) => {
     const existing = await ctx.db.query('waStatus').first()
-    const patch = { status, qr: status === 'qr' ? qr : undefined, updatedAt: Date.now() }
+    // Keep the last QR visible through transient reconnects; only clear it once
+    // actually connected. This avoids the panel flickering to "Not connected"
+    // while Baileys refreshes the code.
+    const nextQr = status === 'connected' ? undefined : (qr ?? existing?.qr)
+    const patch = { status, qr: nextQr, updatedAt: Date.now() }
     if (existing) await ctx.db.patch(existing._id, patch)
     else await ctx.db.insert('waStatus', patch)
   },
