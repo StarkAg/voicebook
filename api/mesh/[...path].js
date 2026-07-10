@@ -18,10 +18,20 @@ export default async function handler(req, res) {
   const parts = req.query.path
   const path = Array.isArray(parts) ? parts.join('/') : parts || ''
 
-  // Read the raw request body (multipart form-data for STT, JSON for chat/TTS).
-  const chunks = []
-  for await (const chunk of req) chunks.push(chunk)
-  const body = chunks.length ? Buffer.concat(chunks) : undefined
+  // Get the request body. Depending on the platform/runtime the body may arrive
+  // already parsed (Vercel parses JSON) or as a raw stream (multipart audio for
+  // STT). Handle both: re-serialize a parsed object, otherwise drain the stream.
+  let body
+  if (req.body !== undefined && req.body !== null) {
+    body =
+      typeof req.body === 'string' || Buffer.isBuffer(req.body)
+        ? req.body
+        : JSON.stringify(req.body)
+  } else {
+    const chunks = []
+    for await (const chunk of req) chunks.push(chunk)
+    body = chunks.length ? Buffer.concat(chunks) : undefined
+  }
 
   const headers = { Authorization: `Bearer ${KEY}` }
   if (req.headers['content-type']) headers['content-type'] = req.headers['content-type']

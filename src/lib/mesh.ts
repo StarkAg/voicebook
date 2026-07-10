@@ -4,11 +4,12 @@
 // Pipeline: audio -> STT (Mesh) -> intent parsing (Mesh chat) -> action,
 // with answers optionally spoken back via TTS (Mesh).
 //
-// All requests go to the same-origin '/api/mesh' path. A proxy attaches the
-// Mesh key server-side so it never ships to the browser and CORS is avoided:
-//   - dev:  the Vite dev server proxy (see vite.config.ts)
-//   - prod: the /api/mesh serverless function (see api/mesh/[...path].js)
-const BASE_URL = '/api/mesh'
+// All requests go to the Mesh proxy hosted as a Convex HTTP action
+// (<deployment>.convex.site/mesh/*). The proxy attaches the Mesh key server-side
+// (never shipped to the browser) and sets CORS. See convex/http.ts. Works
+// identically in dev and prod since Convex is always deployed.
+const CONVEX_SITE = import.meta.env.VITE_CONVEX_SITE_URL as string | undefined
+const BASE_URL = `${CONVEX_SITE || ''}/mesh`
 
 // Auto routing lets Mesh pick the cheapest capable model per task.
 const CHAT_MODEL = (import.meta.env.VITE_MESH_CHAT_MODEL as string) || 'auto'

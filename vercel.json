@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/mesh/[...path].js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [{ "source": "/api/mesh/(.*)", "destination": "/api/mesh/$1" }]
+}
