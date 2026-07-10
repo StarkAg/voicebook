@@ -124,10 +124,6 @@ export default function LoginGate() {
         )}
         {msg && <div className="mt-3 text-center text-xs font-semibold text-absent">{msg}</div>}
       </div>
-
-      <div className="mt-4 text-center text-[10px] text-muted">
-        Login karke aap apna private khata banate hain
-      </div>
     </div>
   )
 }
