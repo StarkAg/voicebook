@@ -1,5 +1,6 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requireUser } from './model'
 
 const itemValidator = v.object({
   name: v.string(),
@@ -10,6 +11,7 @@ const itemValidator = v.object({
 
 export const create = mutation({
   args: {
+    token: v.string(),
     customerName: v.string(),
     customerPhone: v.string(),
     items: v.array(itemValidator),
@@ -17,7 +19,9 @@ export const create = mutation({
     status: v.optional(v.union(v.literal('draft'), v.literal('sent'))),
   },
   handler: async (ctx, args) => {
+    const userId = await requireUser(ctx, args.token)
     return await ctx.db.insert('bills', {
+      userId,
       customerName: args.customerName,
       customerPhone: args.customerPhone,
       items: args.items,
@@ -28,16 +32,19 @@ export const create = mutation({
   },
 })
 
-export const markSent = mutation({
-  args: { id: v.id('bills') },
-  handler: async (ctx, { id }) => {
-    await ctx.db.patch(id, { status: 'sent' })
-  },
-})
-
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query('bills').order('desc').take(30)
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, { token }) => {
+    let userId
+    try {
+      userId = await requireUser(ctx, token)
+    } catch {
+      return []
+    }
+    return await ctx.db
+      .query('bills')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .order('desc')
+      .take(30)
   },
 })

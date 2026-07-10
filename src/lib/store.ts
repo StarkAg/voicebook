@@ -1,62 +1,39 @@
 import { useSyncExternalStore } from 'react'
-import type { AppData, Advance, Status, LogEntry, CashEntry } from './types'
+import type { AppData, Status, CashEntry } from './types'
 import { dateKey } from './date'
+import { client } from './convexClient'
+import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
+import { getToken, subscribeAuth } from './auth'
 
-const KEY = 'voicebook:data'
-const DEFAULT_STAFF = ['Vijay', 'Anup', 'Sonu', 'Anand', 'Vicky', 'Dharmendra']
-const OLD_DEMO_STAFF = ['Ramesh', 'Suresh', 'Mahesh']
+// Convex-backed, per-user store. The API surface matches the old local-first
+// store so DailyView/PayView/CashFlowView/VoiceDock are unchanged. A single
+// live subscription to data.getAll (scoped by the session token) feeds the tree;
+// mutators are fire-and-forget and flow back through that subscription.
+const EMPTY: AppData = { staff: [], rates: {}, days: {}, advances: [], cashEntries: [], log: [] }
 
-const SEED: AppData = {
-  staff: DEFAULT_STAFF,
-  rates: {},
-  days: {},
-  advances: [],
-  cashEntries: [],
-  log: [],
-}
-
-function sameStaff(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((name, i) => name === b[i])
-}
-
-function load(): AppData {
-  try {
-    const raw = JSON.parse(localStorage.getItem(KEY) || 'null')
-    if (raw && Array.isArray(raw.staff)) {
-      const data = { ...SEED, ...raw }
-      if (sameStaff(data.staff, OLD_DEMO_STAFF)) return { ...data, staff: DEFAULT_STAFF, rates: {} }
-      return data
-    }
-  } catch {
-    // ignore
-  }
-  return structuredClone(SEED)
-}
-
-let state: AppData = load()
+let state: AppData = EMPTY
 const listeners = new Set<() => void>()
+const emit = () => listeners.forEach((l) => l())
 
-function persist() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state))
-  } catch {
-    // ignore
-  }
+let unsub: (() => void) | null = null
+function resubscribe() {
+  unsub?.()
+  const token = getToken() ?? undefined
+  unsub = client.onUpdate(api.data.getAll, { token }, (data) => {
+    state = data as AppData
+    emit()
+  })
 }
-
-function emit() {
-  persist()
-  listeners.forEach((l) => l())
-}
-
-function set(next: AppData) {
-  state = next
+resubscribe()
+// Re-scope the subscription whenever the signed-in user changes.
+subscribeAuth(() => {
+  state = EMPTY
   emit()
-}
+  resubscribe()
+})
 
-function log(entry: Omit<LogEntry, 'at'>) {
-  state = { ...state, log: [{ at: Date.now(), ...entry }, ...state.log].slice(0, 300) }
-}
+const tok = () => getToken() ?? ''
 
 export const store = {
   get: () => state,
@@ -65,88 +42,61 @@ export const store = {
     return () => listeners.delete(cb)
   },
 
-  setMark(date: string, staff: string, status: Status | '', source: 'manual' | 'voice' = 'manual') {
-    const days = { ...state.days }
-    const day = days[date]
-      ? { ...days[date], marks: { ...days[date].marks } }
-      : { date, marks: {}, locked: false }
-    const prev = day.marks[staff]
-    if (status) day.marks[staff] = status
-    else delete day.marks[staff]
-    days[date] = day
-    log({ summary: `${staff}: ${prev || '—'} → ${status || '—'}`, date, source })
-    set({ ...state, days })
-  },
+  setMark: (date: string, staff: string, status: Status | '', source: 'manual' | 'voice' = 'manual') =>
+    void client.mutation(api.days.setMark, { token: tok(), date, staff, status: status || null, source }),
 
-  setDayAll(date: string, marks: Record<string, Status>, source: 'manual' | 'voice' = 'manual') {
-    const days = { ...state.days }
-    days[date] = { date, marks: { ...marks }, locked: days[date]?.locked ?? false }
-    log({ summary: `Set whole day (${Object.keys(marks).length} staff)`, date, source })
-    set({ ...state, days })
-  },
+  setDayAll: (date: string, marks: Record<string, Status>, source: 'manual' | 'voice' = 'manual') =>
+    void client.mutation(api.days.setDayAll, { token: tok(), date, marks, source }),
 
-  lockDay(date: string) {
-    const days = { ...state.days }
-    if (days[date]) days[date] = { ...days[date], locked: true }
-    set({ ...state, days })
-  },
+  lockDay: (date: string) => void client.mutation(api.days.lockDay, { token: tok(), date }),
 
-  setRate(staff: string, rate: number) {
-    set({ ...state, rates: { ...state.rates, [staff]: rate } })
-  },
+  setRate: (staff: string, rate: number) =>
+    void client.mutation(api.staff.setRate, { token: tok(), staff, rate }),
 
-  addStaff(name: string) {
-    if (state.staff.includes(name)) return
-    log({ summary: `Added worker ${name}` })
-    set({ ...state, staff: [...state.staff, name] })
-  },
+  addStaff: (name: string) => void client.mutation(api.staff.add, { token: tok(), name }),
 
-  removeStaff(name: string) {
-    log({ summary: `Removed worker ${name}` })
-    set({ ...state, staff: state.staff.filter((s) => s !== name) })
-  },
+  removeStaff: (name: string) => void client.mutation(api.staff.remove, { token: tok(), name }),
 
-  addAdvance(staff: string, amount: number, note = '', date?: string, source: 'manual' | 'voice' = 'manual') {
-    const adv: Advance = {
-      id: `adv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+  addAdvance: (
+    staff: string,
+    amount: number,
+    note = '',
+    date?: string,
+    source: 'manual' | 'voice' = 'manual',
+  ) =>
+    void client.mutation(api.advances.add, {
+      token: tok(),
       staff,
-      date: date || dateKey(new Date()),
       amount,
       note,
-    }
-    log({ summary: `Advance ₹${amount} to ${staff}${note ? ` (${note})` : ''}`, date: adv.date, source })
-    set({ ...state, advances: [...state.advances, adv] })
-  },
+      date: date ?? dateKey(new Date()),
+      source,
+    }),
 
-  removeAdvance(id: string) {
-    set({ ...state, advances: state.advances.filter((a) => a.id !== id) })
-  },
+  removeAdvance: (id: string) =>
+    void client.mutation(api.advances.remove, { token: tok(), id: id as Id<'advances'> }),
 
-  addCashEntry(kind: CashEntry['kind'], amount: number, note: string, date?: string, source: 'manual' | 'voice' = 'manual') {
-    const entry: CashEntry = {
-      id: `cash-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      date: date || dateKey(new Date()),
+  addCashEntry: (
+    kind: CashEntry['kind'],
+    amount: number,
+    note: string,
+    date?: string,
+    source: 'manual' | 'voice' = 'manual',
+  ) =>
+    void client.mutation(api.cash.add, {
+      token: tok(),
       kind,
       amount,
-      note: note.trim() || (kind === 'in' ? 'Cash inward' : 'Expense'),
+      note,
+      date: date ?? dateKey(new Date()),
       source,
-    }
-    log({
-      summary: `${kind === 'in' ? 'Cash in' : 'Expense'} ₹${amount}: ${entry.note}`,
-      date: entry.date,
-      source,
-    })
-    set({ ...state, cashEntries: [...(state.cashEntries || []), entry] })
-  },
+    }),
 
-  removeCashEntry(id: string) {
-    set({ ...state, cashEntries: (state.cashEntries || []).filter((a) => a.id !== id) })
-  },
+  removeCashEntry: (id: string) =>
+    void client.mutation(api.cash.remove, { token: tok(), id: id as Id<'cashEntries'> }),
 
-  logVoice(summary: string) {
-    log({ summary, source: 'voice' })
-    set({ ...state })
-  },
+  logVoice: (summary: string) =>
+    void client.mutation(api.logs.append, { token: tok(), summary, source: 'voice' }),
 }
 
 export function useStore(): AppData {

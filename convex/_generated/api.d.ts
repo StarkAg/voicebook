@@ -9,6 +9,7 @@
  */
 
 import type * as advances from "../advances.js";
+import type * as auth from "../auth.js";
 import type * as bills from "../bills.js";
 import type * as cash from "../cash.js";
 import type * as customers from "../customers.js";
@@ -30,6 +31,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   advances: typeof advances;
+  auth: typeof auth;
   bills: typeof bills;
   cash: typeof cash;
   customers: typeof customers;

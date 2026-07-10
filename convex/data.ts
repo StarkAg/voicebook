@@ -1,18 +1,43 @@
 import { query } from './_generated/server'
+import { v } from 'convex/values'
+import { requireUser } from './model'
 
-// Returns the whole app state already reshaped into the client's AppData shape,
-// so the store bridge (src/lib/store.ts) can assign it directly. This is the
-// single live subscription that feeds the React tree.
+const EMPTY = { staff: [], rates: {}, days: {}, advances: [], cashEntries: [], log: [] }
+
+// Returns the signed-in user's whole app state, reshaped into the client's
+// AppData shape. Empty (login gate) when not authenticated.
 export const getAll = query({
-  args: {},
-  handler: async (ctx) => {
-    const staffDocs = await ctx.db.query('staff').collect()
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, { token }) => {
+    let userId
+    try {
+      userId = await requireUser(ctx, token)
+    } catch {
+      return EMPTY
+    }
+
+    const staffDocs = await ctx.db
+      .query('staff')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect()
     staffDocs.sort((a, b) => a.order - b.order)
 
-    const dayDocs = await ctx.db.query('days').collect()
-    const advanceDocs = await ctx.db.query('advances').collect()
-    const cashDocs = await ctx.db.query('cashEntries').collect()
-    const logDocs = await ctx.db.query('log').collect()
+    const dayDocs = await ctx.db
+      .query('days')
+      .withIndex('by_user_date', (q) => q.eq('userId', userId))
+      .collect()
+    const advanceDocs = await ctx.db
+      .query('advances')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect()
+    const cashDocs = await ctx.db
+      .query('cashEntries')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect()
+    const logDocs = await ctx.db
+      .query('log')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect()
     logDocs.sort((a, b) => b.at - a.at)
 
     const rates: Record<string, number> = {}

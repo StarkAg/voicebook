@@ -4,6 +4,8 @@ import PayView from './components/PayView'
 import CashFlowView from './components/CashFlowView'
 import BillingView from './components/BillingView'
 import VoiceDock from './components/VoiceDock'
+import LoginGate from './components/LoginGate'
+import { useAuth, signOut } from './lib/auth'
 
 type Tab = 'day' | 'pay' | 'cashflow' | 'billing'
 
@@ -17,18 +19,35 @@ const TABS: { key: Tab; label: string }[] = [
 const today = () => new Date()
 
 export default function App() {
+  const { me } = useAuth()
   const [tab, setTab] = useState<Tab>('day')
   const [cursor, setCursor] = useState(today)
 
+  if (me === undefined) {
+    return (
+      <div className="grid min-h-full place-items-center text-muted">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-brand" />
+      </div>
+    )
+  }
+  if (!me) return <LoginGate />
+
   return (
     <div className="mx-auto min-h-full max-w-[760px] bg-bg px-3 pt-16 pb-40 text-fg">
-      <header className="fixed inset-x-0 top-0 z-20 mx-auto max-w-[760px] border-b border-line bg-bg/95 px-3 py-3 backdrop-blur">
-        <div className="text-lg font-bold leading-tight">
-          Voice<span className="text-brand">Book</span>
+      <header className="fixed inset-x-0 top-0 z-20 mx-auto flex max-w-[760px] items-center justify-between border-b border-line bg-bg/95 px-3 py-3 backdrop-blur">
+        <div>
+          <div className="text-lg font-bold leading-tight">
+            Voice<span className="text-brand">Book</span>
+          </div>
+          <div className="text-[10px] font-semibold text-muted">Powered by Mesh API</div>
         </div>
-        <div className="text-[10px] font-semibold text-muted">
-          Powered by Mesh API
-        </div>
+        <button
+          onClick={signOut}
+          className="rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] font-semibold text-muted hover:bg-card2"
+          title={me.phone}
+        >
+          {me.name || `+91 ${me.phone}`} · Logout
+        </button>
       </header>
 
       <nav className="mb-4 grid grid-cols-4 gap-2 bg-bg/95 py-2 backdrop-blur">

@@ -1,14 +1,17 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requireUser } from './model'
 
 // Frontend enqueues a WhatsApp message; the Railway worker drains this table.
 export const enqueue = mutation({
   args: {
+    token: v.string(),
     to: v.string(),
     text: v.string(),
     imageBase64: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireUser(ctx, args.token)
     return await ctx.db.insert('outbox', {
       to: args.to,
       text: args.text,

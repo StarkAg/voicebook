@@ -6,6 +6,7 @@ import { transcribe, meshConfigured } from '../lib/mesh'
 import { parseBill, billTotal } from '../lib/bill'
 import { upiLink, upiQrDataUrl, stripDataUrl, UPI_VPA } from '../lib/upi'
 import { inr } from '../lib/date'
+import { getToken } from '../lib/auth'
 import WhatsAppConnect from './WhatsAppConnect'
 import type { BillItem } from '../lib/types'
 
@@ -95,15 +96,17 @@ export default function BillingView() {
     if (!items.length) return flash('Pehle bill banaiye.')
     if (!validCustomer) return flash('Grahak ka naam aur sahi number daaliye.')
     const phone = normalizePhone(custPhone)
-    await upsertCustomer({ name: custName.trim(), phone })
+    const token = getToken() ?? ''
+    await upsertCustomer({ token, name: custName.trim(), phone })
     await createBill({
+      token,
       customerName: custName.trim(),
       customerPhone: phone,
       items,
       total,
       status: 'sent',
     })
-    await enqueue({ to: phone, text: billText(custName.trim(), items, total) })
+    await enqueue({ token, to: phone, text: billText(custName.trim(), items, total) })
     flash('Bill WhatsApp par bhej diya ✓')
   }
 
@@ -116,8 +119,10 @@ export default function BillingView() {
     const link = upiLink({ amount, note })
     const dataUrl = await upiQrDataUrl(link)
     setQr(dataUrl)
-    await upsertCustomer({ name: custName.trim(), phone })
+    const token = getToken() ?? ''
+    await upsertCustomer({ token, name: custName.trim(), phone })
     await createPayment({
+      token,
       customerName: custName.trim(),
       customerPhone: phone,
       amount,
@@ -127,6 +132,7 @@ export default function BillingView() {
       status: 'sent',
     })
     await enqueue({
+      token,
       to: phone,
       text: `💰 *Payment request: ₹${amount}*\nPay via UPI: ${link}\nYa neeche QR scan karein 👇`,
       imageBase64: stripDataUrl(dataUrl),
