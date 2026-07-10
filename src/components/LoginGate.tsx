@@ -23,7 +23,12 @@ export default function LoginGate() {
     try {
       const res = await requestOtp(digits)
       if (!res.ok) {
-        setMsg('Number galat hai')
+        if (res.error === 'rate_limited') {
+          const s = res.retryAfter ?? 30
+          setMsg(s > 90 ? `Bahut requests — thodi der baad try karein` : `Ruko — ${s}s baad dobara try karein`)
+        } else {
+          setMsg('Sahi 10-digit number daalein')
+        }
         return
       }
       setDevHint(res.devHint || '')

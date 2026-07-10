@@ -26,6 +26,9 @@ export default defineSchema({
     code: v.string(),
     expiresAt: v.number(),
     attempts: v.number(),
+    lastSentAt: v.optional(v.number()),
+    sentCount: v.optional(v.number()),
+    windowStart: v.optional(v.number()),
   }).index('by_phone', ['phone']),
 
   // --- per-user app data ---

@@ -23,7 +23,9 @@ function setToken(next: string) {
   listeners.forEach((l) => l())
 }
 
-export async function requestOtp(phone: string): Promise<{ ok: boolean; devHint?: string }> {
+export async function requestOtp(
+  phone: string,
+): Promise<{ ok: boolean; devHint?: string; error?: string; retryAfter?: number }> {
   return client.action(api.auth.requestOtp, { phone })
 }
 

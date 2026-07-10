@@ -9,18 +9,28 @@ declare const process: { env: Record<string, string | undefined> }
 // TODO: remove DEV_CODE once Fast2SMS is live in production.
 const DEV_CODE = '123456'
 const OTP_TTL_MS = 5 * 60 * 1000
+// Rate limits (per phone number).
+const COOLDOWN_MS = 30 * 1000 // min gap between OTP sends
+const WINDOW_MS = 60 * 60 * 1000 // rolling window
+const MAX_PER_WINDOW = 5 // max OTP sends per window
+const MAX_ATTEMPTS = 5 // max wrong verify tries per code
 
 const tenDigits = (phone: string) => phone.replace(/\D/g, '').slice(-10)
 
 // Send an OTP over SMS via Fast2SMS (if configured). Actions can do fetch.
+// Rate limiting happens atomically in prepareOtp BEFORE any SMS is sent.
 export const requestOtp = action({
   args: { phone: v.string() },
-  handler: async (ctx, { phone }): Promise<{ ok: boolean; devHint?: string }> => {
+  handler: async (
+    ctx,
+    { phone },
+  ): Promise<{ ok: boolean; devHint?: string; error?: string; retryAfter?: number }> => {
     const num = tenDigits(phone)
-    if (num.length !== 10) return { ok: false }
+    if (num.length !== 10) return { ok: false, error: 'bad_number' }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
-    await ctx.runMutation(internal.auth.storeOtp, { phone: num, code })
+    const prep = await ctx.runMutation(internal.auth.prepareOtp, { phone: num })
+    if (!prep.allowed) return { ok: false, error: 'rate_limited', retryAfter: prep.retryAfter }
+    const code = prep.code!
 
     const key = process.env.FAST2SMS_API_KEY
     if (key) {
@@ -45,16 +55,59 @@ export const requestOtp = action({
   },
 })
 
-export const storeOtp = internalMutation({
-  args: { phone: v.string(), code: v.string() },
-  handler: async (ctx, { phone, code }) => {
+// Enforce send limits and mint the code atomically. Returns the code to send,
+// or a retryAfter (seconds) when the caller is being rate limited.
+export const prepareOtp = internalMutation({
+  args: { phone: v.string() },
+  handler: async (
+    ctx,
+    { phone },
+  ): Promise<{ allowed: boolean; code?: string; retryAfter?: number }> => {
+    const now = Date.now()
+    const gen = () => Math.floor(100000 + Math.random() * 900000).toString()
     const existing = await ctx.db
       .query('otps')
       .withIndex('by_phone', (q) => q.eq('phone', phone))
       .unique()
-    const row = { phone, code, expiresAt: Date.now() + OTP_TTL_MS, attempts: 0 }
-    if (existing) await ctx.db.patch(existing._id, row)
-    else await ctx.db.insert('otps', row)
+
+    if (!existing) {
+      const code = gen()
+      await ctx.db.insert('otps', {
+        phone,
+        code,
+        expiresAt: now + OTP_TTL_MS,
+        attempts: 0,
+        lastSentAt: now,
+        sentCount: 1,
+        windowStart: now,
+      })
+      return { allowed: true, code }
+    }
+
+    const lastSentAt = existing.lastSentAt ?? 0
+    if (now - lastSentAt < COOLDOWN_MS) {
+      return { allowed: false, retryAfter: Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000) }
+    }
+    let windowStart = existing.windowStart ?? now
+    let sentCount = existing.sentCount ?? 0
+    if (now - windowStart >= WINDOW_MS) {
+      windowStart = now
+      sentCount = 0
+    }
+    if (sentCount >= MAX_PER_WINDOW) {
+      return { allowed: false, retryAfter: Math.ceil((WINDOW_MS - (now - windowStart)) / 1000) }
+    }
+
+    const code = gen()
+    await ctx.db.patch(existing._id, {
+      code,
+      expiresAt: now + OTP_TTL_MS,
+      attempts: 0,
+      lastSentAt: now,
+      sentCount: sentCount + 1,
+      windowStart,
+    })
+    return { allowed: true, code }
   },
 })
 
@@ -67,11 +120,17 @@ export const verifyOtp = mutation({
       .withIndex('by_phone', (q) => q.eq('phone', num))
       .unique()
 
-    const valid =
-      code === DEV_CODE || (otp && otp.code === code && otp.expiresAt > Date.now())
-    if (!valid) {
-      if (otp) await ctx.db.patch(otp._id, { attempts: otp.attempts + 1 })
-      return null
+    if (code !== DEV_CODE) {
+      if (!otp) return null
+      // Too many wrong tries — burn the code so they must request a new one.
+      if (otp.attempts >= MAX_ATTEMPTS) {
+        await ctx.db.delete(otp._id)
+        return null
+      }
+      if (otp.code !== code || otp.expiresAt <= Date.now()) {
+        await ctx.db.patch(otp._id, { attempts: otp.attempts + 1 })
+        return null
+      }
     }
     if (otp) await ctx.db.delete(otp._id)
 
