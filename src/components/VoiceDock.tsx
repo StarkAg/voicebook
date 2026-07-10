@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRecorder } from '../lib/useRecorder'
 import { transcribe, speak, meshConfigured } from '../lib/mesh'
 import { runVoiceCommand, type Action } from '../lib/agent'
@@ -45,6 +45,16 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
   const rec = useRecorder()
   const [phase, setPhase] = useState<Phase>('idle')
   const [typed, setTyped] = useState('')
+  const stopTimerRef = useRef<number | null>(null)
+
+  const clearStopTimer = () => {
+    if (stopTimerRef.current !== null) {
+      window.clearTimeout(stopTimerRef.current)
+      stopTimerRef.current = null
+    }
+  }
+
+  useEffect(() => clearStopTimer, [])
 
   const handleTranscript = async (text: string) => {
     if (!text.trim()) {
@@ -75,24 +85,37 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
     }
   }
 
+  const stopListening = async () => {
+    clearStopTimer()
+    const blob = await rec.stop()
+    if (!blob) {
+      setPhase('idle')
+      return
+    }
+    setPhase('thinking')
+    try {
+      const text = await transcribe(blob)
+      await handleTranscript(text)
+    } catch {
+      setPhase('error')
+    }
+  }
+
   const onMicClick = async () => {
     if (phase === 'thinking') return
     if (rec.recording) {
-      const blob = await rec.stop()
-      if (!blob) {
-        setPhase('idle')
-        return
-      }
-      setPhase('thinking')
+      await stopListening()
+    } else {
       try {
-        const text = await transcribe(blob)
-        await handleTranscript(text)
+        await rec.start()
+        setPhase('recording')
+        clearStopTimer()
+        stopTimerRef.current = window.setTimeout(() => {
+          void stopListening()
+        }, 8000)
       } catch {
         setPhase('error')
       }
-    } else {
-      await rec.start()
-      setPhase('recording')
     }
   }
 

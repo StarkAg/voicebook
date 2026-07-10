@@ -6,7 +6,7 @@ import qrcode from 'qrcode-terminal'
 import pino from 'pino'
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi as api } from 'convex/server'
-import { useConvexAuthState } from './convexAuthState.js'
+import { loadConvexAuthState } from './convexAuthState.js'
 
 const CONVEX_URL = process.env.CONVEX_URL
 if (!CONVEX_URL) {
@@ -63,7 +63,7 @@ async function drain() {
 }
 
 async function start() {
-  const { state, saveCreds } = await useConvexAuthState(client, api)
+  const { state, saveCreds } = await loadConvexAuthState(client, api)
   const { version } = await fetchLatestBaileysVersion()
   sock = makeWASocket({ version, auth: state, logger, printQRInTerminal: false })
 

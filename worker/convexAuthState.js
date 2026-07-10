@@ -3,7 +3,7 @@ import { initAuthCreds, BufferJSON, proto } from '@whiskeysockets/baileys'
 // Baileys auth state backed by Convex (waSession table) instead of the local
 // filesystem, so the WhatsApp login survives Railway redeploys (ephemeral FS)
 // without forcing a re-scan. Mirrors the shape of useMultiFileAuthState.
-export async function useConvexAuthState(client, api) {
+export async function loadConvexAuthState(client, api) {
   const rows = await client.query(api.wa.getAllSession, {})
   const cache = new Map(rows.map((r) => [r.key, r.value]))
 
