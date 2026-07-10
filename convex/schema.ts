@@ -95,4 +95,16 @@ export default defineSchema({
     key: v.string(),
     value: v.string(),
   }).index('by_key', ['key']),
+
+  // Live WhatsApp link status published by the worker for the Connect UI.
+  waStatus: defineTable({
+    status: v.union(
+      v.literal('disconnected'),
+      v.literal('qr'),
+      v.literal('connecting'),
+      v.literal('connected'),
+    ),
+    qr: v.optional(v.string()),
+    updatedAt: v.number(),
+  }),
 })

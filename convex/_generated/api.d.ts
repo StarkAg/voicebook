@@ -14,6 +14,7 @@ import type * as cash from "../cash.js";
 import type * as customers from "../customers.js";
 import type * as data from "../data.js";
 import type * as days from "../days.js";
+import type * as http from "../http.js";
 import type * as logs from "../logs.js";
 import type * as model from "../model.js";
 import type * as outbox from "../outbox.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   customers: typeof customers;
   data: typeof data;
   days: typeof days;
+  http: typeof http;
   logs: typeof logs;
   model: typeof model;
   outbox: typeof outbox;

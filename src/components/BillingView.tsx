@@ -6,6 +6,7 @@ import { transcribe, meshConfigured } from '../lib/mesh'
 import { parseBill, billTotal } from '../lib/bill'
 import { upiLink, upiQrDataUrl, stripDataUrl, UPI_VPA } from '../lib/upi'
 import { inr } from '../lib/date'
+import WhatsAppConnect from './WhatsAppConnect'
 import type { BillItem } from '../lib/types'
 
 // WhatsApp needs a country-coded number with no symbols; default to India (91).
@@ -135,6 +136,8 @@ export default function BillingView() {
 
   return (
     <div className="space-y-4">
+      <WhatsAppConnect />
+
       {/* Voice composer */}
       <div className="rounded-2xl border border-line bg-card2 p-3">
         <div className="mb-2 text-sm font-bold text-fg">Bill banayein — bolkar ya likhkar</div>

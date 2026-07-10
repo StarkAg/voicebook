@@ -69,15 +69,22 @@ async function start() {
 
   sock.ev.on('creds.update', saveCreds)
 
+  const publish = (status, qr) =>
+    client.mutation(api.wa.setStatus, { status, qr }).catch(() => {})
+
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update
     if (qr) {
       console.log('\n📱 Scan this QR in WhatsApp → Linked devices → Link a device:\n')
       qrcode.generate(qr, { small: true })
+      // Also publish the raw QR string so the app's Connect page can render it.
+      publish('qr', qr)
     }
+    if (connection === 'connecting') publish('connecting')
     if (connection === 'open') {
       ready = true
       console.log('✅ WhatsApp connected — draining outbox')
+      publish('connected')
       drain()
     }
     if (connection === 'close') {
@@ -85,6 +92,7 @@ async function start() {
       const code = lastDisconnect?.error?.output?.statusCode
       const loggedOut = code === DisconnectReason.loggedOut
       console.log(`Connection closed (${code}) — ${loggedOut ? 'logged out' : 'reconnecting'}`)
+      publish('disconnected')
       if (!loggedOut) start()
     }
   })
