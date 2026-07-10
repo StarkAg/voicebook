@@ -24,9 +24,12 @@ export const requestOtp = action({
 
     const key = process.env.FAST2SMS_API_KEY
     if (key) {
+      // Quick transactional route (route=q). The OTP route needs Fast2SMS
+      // website verification; the quick route works once the wallet is funded.
+      const msg = `Your VoiceBook OTP is ${code}. Kisi ko na batayein.`
       const url =
         `https://www.fast2sms.com/dev/bulkV2?authorization=${key}` +
-        `&route=otp&variables_values=${code}&flash=0&numbers=${num}`
+        `&route=q&message=${encodeURIComponent(msg)}&flash=0&numbers=${num}`
       try {
         const res = await fetch(url)
         const data = await res.json()
