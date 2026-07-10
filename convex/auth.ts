@@ -28,13 +28,16 @@ export const requestOtp = action({
         `https://www.fast2sms.com/dev/bulkV2?authorization=${key}` +
         `&route=otp&variables_values=${code}&flash=0&numbers=${num}`
       try {
-        await fetch(url)
+        const res = await fetch(url)
+        const data = await res.json()
+        if (data?.return === true) return { ok: true }
       } catch {
-        // best-effort; the dev code still works
+        // fall through to dev-code fallback
       }
-      return { ok: true }
+      // SMS didn't go out (bad route/account/number) — keep login usable.
+      return { ok: true, devHint: DEV_CODE }
     }
-    // No SMS provider yet — tell the client the dev code works.
+    // No SMS provider configured — tell the client the dev code works.
     return { ok: true, devHint: DEV_CODE }
   },
 })
