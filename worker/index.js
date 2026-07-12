@@ -69,6 +69,30 @@ async function start() {
 
   sock.ev.on('creds.update', saveCreds)
 
+  // Inbound messages: only from numbers that have received a bill (see
+  // customerOwners) get an AI reply — orderBot.reply looks that up and no-ops
+  // otherwise. Skip our own outbound echoes, group chats, and stale/replayed
+  // history so a reconnect doesn't re-trigger old messages.
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    if (type !== 'notify') return
+    for (const m of messages) {
+      try {
+        if (m.key.fromMe) continue
+        const jid = m.key.remoteJid || ''
+        if (!jid.endsWith('@s.whatsapp.net')) continue
+        const text = m.message?.conversation || m.message?.extendedTextMessage?.text
+        if (!text) continue
+        const ts = Number(m.messageTimestamp || 0) * 1000
+        if (ts && Date.now() - ts > 2 * 60 * 1000) continue
+        const phone = jid.split('@')[0].replace(/\D/g, '')
+        const res = await client.action(api.orderBot.reply, { phone, text })
+        if (res?.ok) console.log(`💬 order-bot replied to ${phone}`)
+      } catch (e) {
+        console.error('inbound message error:', e?.message || e)
+      }
+    }
+  })
+
   const publish = (status, qr) =>
     client.mutation(api.wa.setStatus, { status, qr }).catch(() => {})
 

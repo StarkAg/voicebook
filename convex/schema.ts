@@ -132,6 +132,24 @@ export default defineSchema({
     value: v.string(),
   }).index('by_key', ['key']),
 
+  // Reverse map: which shop owner a customer phone belongs to, so an inbound
+  // WhatsApp message from that number can be routed to the right owner's Mesh
+  // order-bot. Written whenever a bill/payment request is sent to that phone.
+  customerOwners: defineTable({
+    phone: v.string(),
+    userId: v.id('users'),
+    updatedAt: v.number(),
+  }).index('by_phone', ['phone']),
+
+  // Order-taking chat history between a customer and a shop's Mesh assistant.
+  orderChats: defineTable({
+    ownerId: v.id('users'),
+    phone: v.string(),
+    role: v.union(v.literal('customer'), v.literal('assistant')),
+    text: v.string(),
+    at: v.number(),
+  }).index('by_owner_phone', ['ownerId', 'phone']),
+
   waStatus: defineTable({
     status: v.union(
       v.literal('disconnected'),

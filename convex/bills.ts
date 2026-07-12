@@ -1,4 +1,4 @@
-import { mutation, query } from './_generated/server'
+import { mutation, query, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 import { requireUser } from './model'
 
@@ -27,6 +27,30 @@ export const create = mutation({
       items: args.items,
       total: args.total,
       status: args.status ?? 'draft',
+      createdAt: Date.now(),
+    })
+  },
+})
+
+// Used by orderBot.reply — a customer's WhatsApp order creates a draft bill
+// for the shop owner (no unauthenticated user token, so no requireUser here;
+// only callable from other Convex functions via ctx.runMutation(internal.*)).
+export const internalCreateForOwner = internalMutation({
+  args: {
+    ownerId: v.id('users'),
+    customerName: v.string(),
+    customerPhone: v.string(),
+    items: v.array(itemValidator),
+    total: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert('bills', {
+      userId: args.ownerId,
+      customerName: args.customerName,
+      customerPhone: args.customerPhone,
+      items: args.items,
+      total: args.total,
+      status: 'draft',
       createdAt: Date.now(),
     })
   },

@@ -1,4 +1,4 @@
-import { mutation, query } from './_generated/server'
+import { mutation, query, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 import { requireUser } from './model'
 
@@ -12,6 +12,22 @@ export const enqueue = mutation({
   },
   handler: async (ctx, args) => {
     await requireUser(ctx, args.token)
+    return await ctx.db.insert('outbox', {
+      to: args.to,
+      text: args.text,
+      imageBase64: args.imageBase64,
+      status: 'pending',
+      attempts: 0,
+      createdAt: Date.now(),
+    })
+  },
+})
+
+// Automated sends (order-bot replies, order notifications) — no user token,
+// only callable from other Convex functions via ctx.runMutation(internal.*).
+export const systemEnqueue = internalMutation({
+  args: { to: v.string(), text: v.string(), imageBase64: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     return await ctx.db.insert('outbox', {
       to: args.to,
       text: args.text,

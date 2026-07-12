@@ -23,6 +23,16 @@ export const upsert = mutation({
   args: { token: v.string(), name: v.string(), phone: v.string() },
   handler: async (ctx, { token, name, phone }) => {
     const userId = await requireUser(ctx, token)
+
+    // Link this phone to this owner so an inbound WhatsApp message from them
+    // can be routed to this shop's order-bot (see convex/orderBot.ts).
+    const link = await ctx.db
+      .query('customerOwners')
+      .withIndex('by_phone', (q) => q.eq('phone', phone))
+      .unique()
+    if (link) await ctx.db.patch(link._id, { userId, updatedAt: Date.now() })
+    else await ctx.db.insert('customerOwners', { phone, userId, updatedAt: Date.now() })
+
     const existing = await ctx.db
       .query('customers')
       .withIndex('by_user_phone', (q) => q.eq('userId', userId).eq('phone', phone))

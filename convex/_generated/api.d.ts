@@ -18,6 +18,7 @@ import type * as days from "../days.js";
 import type * as http from "../http.js";
 import type * as logs from "../logs.js";
 import type * as model from "../model.js";
+import type * as orderBot from "../orderBot.js";
 import type * as outbox from "../outbox.js";
 import type * as payments from "../payments.js";
 import type * as staff from "../staff.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   logs: typeof logs;
   model: typeof model;
+  orderBot: typeof orderBot;
   outbox: typeof outbox;
   payments: typeof payments;
   staff: typeof staff;
