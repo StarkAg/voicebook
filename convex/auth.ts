@@ -28,6 +28,14 @@ export const requestOtp = action({
     const num = tenDigits(phone)
     if (num.length !== 10) return { ok: false, error: 'bad_number' }
 
+    // Bypass numbers (set only on the dev deployment via OTP_BYPASS_NUMBERS):
+    // skip SMS entirely and log in with the dev code. Never set on prod.
+    const bypass = (process.env.OTP_BYPASS_NUMBERS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (bypass.includes(num)) return { ok: true, devHint: DEV_CODE }
+
     const prep = await ctx.runMutation(internal.auth.prepareOtp, { phone: num })
     if (!prep.allowed) return { ok: false, error: 'rate_limited', retryAfter: prep.retryAfter }
     const code = prep.code!

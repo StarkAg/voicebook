@@ -32,6 +32,7 @@ export default function LoginGate() {
         return
       }
       setDevHint(res.devHint || '')
+      if (res.devHint) setCode(res.devHint) // pre-fill for dev/bypass — one tap to verify
       setStep('code')
     } catch {
       setMsg('OTP bhejne mein dikkat, dobara try karein')
