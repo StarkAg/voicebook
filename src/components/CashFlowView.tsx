@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { store, useStore } from '../lib/store'
 import { MON, dateKey, fmtDay, inr, ym } from '../lib/date'
 import type { CashEntry } from '../lib/types'
+
+const CASH_EXAMPLES = ['50 sale', '150 tempo fare expense', '200 rent expense', '1000 udhaar aaya']
 
 const OUT_HINT = /\b(expense|fare|tempo|rent|purchase|paid|payment|diesel|petrol|transport|tea|chai|kharcha|kharach|out)\b/i
 
@@ -32,6 +34,11 @@ export default function CashFlowView({ cursor, setCursor }: { cursor: Date; setC
 
   const [entryDate, setEntryDate] = useState(dateKey(new Date()))
   const [entryText, setEntryText] = useState('')
+  const [exIdx, setExIdx] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setExIdx((i) => (i + 1) % CASH_EXAMPLES.length), 2600)
+    return () => clearInterval(t)
+  }, [])
 
   const entries = useMemo(
     () => (data.cashEntries || []).filter((e) => e.date.startsWith(month)).sort((a, b) => b.date.localeCompare(a.date)),
@@ -81,7 +88,7 @@ export default function CashFlowView({ cursor, setCursor }: { cursor: Date; setC
             value={entryText}
             onChange={(e) => setEntryText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addEntry()}
-            placeholder="50 sale / 150 tempo fare expense"
+            placeholder={CASH_EXAMPLES[exIdx]}
             className="min-w-0 flex-1 rounded-[10px] border border-line bg-card px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-brand"
           />
           <button onClick={addEntry} className="rounded-[10px] bg-brand px-4 text-sm font-extrabold text-ink active:brightness-95">

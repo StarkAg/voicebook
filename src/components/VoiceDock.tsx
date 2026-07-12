@@ -8,6 +8,18 @@ import type { Status } from '../lib/types'
 
 type Phase = 'idle' | 'recording' | 'thinking' | 'done' | 'error'
 
+// Rotating example commands shown in the input placeholder.
+const EXAMPLES = ['Ramesh present', 'Suresh ko 500 advance', '50 sale', '150 tempo fare expense']
+
+function useRotating(items: string[], ms = 2600): string {
+  const [i, setI] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % items.length), ms)
+    return () => clearInterval(t)
+  }, [items, ms])
+  return items[i]
+}
+
 function applyActions(actions: Action[]): number {
   let n = 0
   for (const a of actions) {
@@ -45,6 +57,7 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
   const rec = useRecorder()
   const [phase, setPhase] = useState<Phase>('idle')
   const [typed, setTyped] = useState('')
+  const example = useRotating(EXAMPLES)
   const stopTimerRef = useRef<number | null>(null)
 
   const clearStopTimer = () => {
@@ -151,7 +164,7 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitTyped()}
-            placeholder={rec.recording ? 'Listening…' : 'e.g. "Ramesh present" · "50 sale" · "150 tempo fare expense"'}
+            placeholder={rec.recording ? 'Listening…' : `e.g. "${example}"`}
             disabled={rec.recording}
             className="min-w-0 flex-1 rounded-full border border-line bg-card2 px-4 py-3 text-sm outline-none placeholder:text-muted focus:border-brand"
           />
