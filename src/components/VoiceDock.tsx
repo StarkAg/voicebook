@@ -151,7 +151,7 @@ export default function VoiceDock({ cursor }: { cursor: Date }) {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitTyped()}
-            placeholder={rec.recording ? 'Listening…' : 'or type: "Ramesh present, Suresh ko 500 advance"'}
+            placeholder={rec.recording ? 'Listening…' : 'e.g. "Ramesh present" · "50 sale" · "150 tempo fare expense"'}
             disabled={rec.recording}
             className="min-w-0 flex-1 rounded-full border border-line bg-card2 px-4 py-3 text-sm outline-none placeholder:text-muted focus:border-brand"
           />
