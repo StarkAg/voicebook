@@ -90,36 +90,63 @@ export default function CashFlowView({ cursor, setCursor }: { cursor: Date; setC
         </div>
       </div>
 
-      <div className="space-y-2">
+      {/* Two-column cash book: inflow (paisa aaya) left, outflow (gaya) right */}
+      <div className="grid grid-cols-2 gap-3">
+        <Ledger title="Inflow" tone="in" entries={entries.filter((e) => e.kind === 'in')} total={totals.inward} />
+        <Ledger title="Outflow" tone="out" entries={entries.filter((e) => e.kind === 'out')} total={totals.expense} />
+      </div>
+    </div>
+  )
+}
+
+function Ledger({
+  title,
+  tone,
+  entries,
+  total,
+}: {
+  title: string
+  tone: 'in' | 'out'
+  entries: CashEntry[]
+  total: number
+}) {
+  const isIn = tone === 'in'
+  const accent = isIn ? 'text-brand' : 'text-absent'
+  return (
+    <div className="rounded-xl border border-line bg-card2 p-2.5">
+      <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
+        <span className={`text-[11px] font-extrabold uppercase tracking-[0.1em] ${accent}`}>
+          {isIn ? '↓ ' : '↑ '}{title}
+        </span>
+        <span className={`text-sm font-black ${accent}`}>
+          {isIn ? '+' : '−'} {inr(total)}
+        </span>
+      </div>
+      <div className="space-y-1.5">
         {entries.length ? (
-          entries.map((entry) => (
-            <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-card2 p-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ${
-                      entry.kind === 'in' ? 'bg-brand text-ink' : 'bg-absent text-white'
-                    }`}
+          entries.map((e) => (
+            <div key={e.id} className="group rounded-lg border border-line bg-card p-2">
+              <div className="flex items-start justify-between gap-1.5">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-bold">{e.note}</div>
+                  <div className="text-[10px] text-muted">{fmtDay(e.date)}</div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className={`text-sm font-black ${accent}`}>{inr(e.amount)}</span>
+                  <button
+                    onClick={() => store.removeCashEntry(e.id)}
+                    className="text-muted opacity-0 transition group-hover:opacity-100 hover:text-absent"
+                    title="Remove"
                   >
-                    {entry.kind === 'in' ? 'In' : 'Out'}
-                  </span>
-                  <span className="text-xs text-muted">{fmtDay(entry.date)}</span>
+                    ×
+                  </button>
                 </div>
-                <div className="mt-1 truncate font-bold">{entry.note}</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`font-black ${entry.kind === 'in' ? 'text-brand' : 'text-absent'}`}>
-                  {entry.kind === 'in' ? '+' : '-'} {inr(entry.amount)}
-                </div>
-                <button onClick={() => store.removeCashEntry(entry.id)} className="h-7 w-7 rounded-full text-muted hover:bg-card hover:text-absent">
-                  x
-                </button>
               </div>
             </div>
           ))
         ) : (
-          <div className="rounded-xl border border-line bg-card2 px-3 py-5 text-center text-sm text-muted">
-            No cash entries recorded this month.
+          <div className="rounded-lg border border-dashed border-line px-2 py-6 text-center text-[11px] text-muted">
+            {isIn ? 'Koi inflow nahi' : 'Koi outflow nahi'}
           </div>
         )}
       </div>
